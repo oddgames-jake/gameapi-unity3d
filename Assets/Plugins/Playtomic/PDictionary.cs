@@ -87,6 +87,21 @@ public class PDictionary : Dictionary<string,object> {
 		
 		return dictionary;
 	}
+
+    protected Dictionary<T,V> GetDictionary<T,V>(string s) 
+    {
+        Dictionary<T, V> d = new Dictionary<T, V>();
+
+        if (ContainsKey(s))
+        {
+
+            if (this[s] is IDictionary)
+            {
+                d = (Dictionary<T, V>)this[s];
+            }
+        }
+        return d;
+    }
 	
 	protected List<T> GetList<T>(string s) 
 	{	

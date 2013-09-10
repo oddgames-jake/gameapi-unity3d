@@ -108,6 +108,19 @@ public class PResponse
 					return "MailChimp API Key has not been configured";
 				case 602:
 					return "MailChimp API returned an error";
+
+                case 700:
+                    return "PlayerChallenges API has been disabled for this game";
+                case 701:
+                    return "It's the other players turn";
+                case 702:
+                    return "Challenge not found";
+
+                case 900:
+                    return "Matchmaking disabled on server";
+                case 901:
+                    return "Matchmaking failed to find match";
+
 				}
 
 				return "Unknown error...";

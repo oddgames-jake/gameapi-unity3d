@@ -5,6 +5,7 @@ public class Playtomic : MonoBehaviour
 {
 	private PLeaderboards _leaderboards;
 	private PPlayerLevels _playerlevels;
+    private PPlayerChallenges _playerchallenges;
 	private PGeoIP _geoip;
 	private PGameVars _gamevars;
 	private PAchievements _achievements;
@@ -78,4 +79,9 @@ public class Playtomic : MonoBehaviour
 	{
 		get { return _instance._newsletter; }
 	}
+
+    public static PPlayerChallenges PlayerChallenges
+    {
+        get { return _instance._playerchallenges; }
+    }
 }
