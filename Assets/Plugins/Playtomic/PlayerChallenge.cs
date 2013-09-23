@@ -14,47 +14,106 @@ public class PlayerChallenge : PDictionary
     public string ChallengeID
     {
         get { return GetString("challengeid"); }
-        set { SetProperty("challengeid", value); }
     }
 
     public int CurrentTurn
     {
         get { return GetInt("currentturn"); }
-        set { SetProperty("currentturn", value); }
+    }
+
+    public string EventID
+    {
+        get { return GetString("eventid"); }
+        set { SetProperty("eventid", value); }
+    }
+    public PChallengeEvent CurrentEvent
+    {
+        get { return Events[GetString("eventid")]; }
     }
 
     public bool IsMyTurn(string id)
     {
-        return (PlayerIDs[GetInt("playerturn")] == id);
+        return id == PlayerIDs[CurrentTurn] || IsIdle;
+    }
+
+    public bool IsIdle
+    {
+        get { return GetBool("idle"); }
     }
 
     public List<string> PlayerIDs
     {
-        get { return GetList<string>("playerids"); }
-        set { SetProperty("playerids", value); }
+        get
+        {
+            return GetStringList("playerids");           
+        }
     }
 
-    public List<string> PlayerNames
+    public Dictionary<string, PlayerChallengeInfo> PlayerData
     {
-        get { return GetList<string>("playernames"); }
-        set { SetProperty("playernames", value); }
+        get
+        {
+            if (ContainsKey("playerinfo"))
+            {
+                var toRet = new Dictionary<string, PlayerChallengeInfo>();
+
+                foreach (var item in (Dictionary<string, object>)this["playerinfo"])
+                {
+                    toRet.Add(item.Key, new PlayerChallengeInfo((IDictionary)item.Value));
+                }
+                return toRet;
+            }
+            else
+            {
+                return new Dictionary<string, PlayerChallengeInfo>();
+            }
+        }
+    }
+
+    public bool IsHidden(string id)
+    {
+        return (PlayerIDs[CurrentTurn] != id && GetBool("hide"));
     }
 
     /// <summary>
     /// Dictionary<eventid,eventdata>
     /// </summary>
-    public Dictionary<string, PChallengeEvent> Events
+    public Dictionary<string,PChallengeEvent> Events
     {
-        get { return GetDictionary<string, PChallengeEvent>("events"); }
+         get
+        {
+            if (ContainsKey("events"))
+            {
+                var toRet = new Dictionary<string, PChallengeEvent>();
+                if (this["events"].GetType() == typeof(Dictionary<string, PChallengeEvent>))
+                {
+                    foreach (var item in (Dictionary<string, PChallengeEvent>)this["events"])
+                    {
+                        toRet.Add(item.Key, new PChallengeEvent((IDictionary)item.Value));
+                    }
+                }
+                else
+                {
+                    foreach (var item in (Dictionary<string, object>)this["events"])
+                    {
+                        toRet.Add(item.Key, new PChallengeEvent((IDictionary)item.Value));
+                    }
+                }
+                return toRet;
+            }
+            else
+            {
+                SetProperty("events", new Dictionary<string, PChallengeEvent>());
+                return Events;
+            }
+        }
+        //get { return GetDictionary<string,PChallengeEvent>("events"); }
         set { SetProperty("events", value); }
     }
 
-    public string CurrentEvent
-    {
-        get { return GetString("currentevent"); }
-        set { SetProperty("currentevent", value); }
-    }
-
+    /// <summary>
+    /// Datetime the challenge was created
+    /// </summary>
     public DateTime startdate
     {
         get
@@ -70,7 +129,10 @@ public class PlayerChallenge : PDictionary
             }
         }
     }
-
+    
+    /// <summary>
+    /// DateTime the challenge was last updated
+    /// </summary>
     public DateTime date
     {
         get

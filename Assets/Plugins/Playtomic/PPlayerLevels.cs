@@ -10,90 +10,125 @@ public class PPlayerLevels
 	private const string LIST = "list";
 	private const string LOAD = "load";
 	private const string RATE = "rate";
-	
-	/**
-	 * Saves a PlayerLevel
-	 * @param	level	PlayerLevel	The level
-	 * @param	callback	Action<PlayerLevel, PResponse>	Callback function
-	 */
+
+   /// <summary>
+   /// Saves a PlayerLevel
+   /// </summary>
+   /// <param name="level"> The Level</param>
+   /// <param name="callback"> The callback function</param>
 	public void Save(PlayerLevel level, Action<PlayerLevel, PResponse> callback)
 	{
-		Playtomic.API.StartCoroutine(SendSaveLoadRequest(SECTION, SAVE, (Dictionary<string,object>) level, callback));
+        Save<PlayerLevel>(level, callback);
 	}
-	
-	/**
-	 * Loads a level
-	 * @param	levelid	string 	The level id
-	 * @param 	callback	Action<PlayerLevel, PResponse>	Callback function
-	 */
+
+    /// <summary>
+    /// Saves a PlayerLevel
+    /// </summary>
+    /// <typeparam name="T"> Type of level (T : PlayerLevel)</typeparam>
+    /// <param name="level"> Level to save</param>
+    /// <param name="callback"> Callback Funtion</param>
+    public void Save<T>(T level, Action<T, PResponse> callback) where T : PlayerLevel, new()
+    {
+        Playtomic.API.StartCoroutine(SendSaveLoadRequest(SECTION, SAVE, (Dictionary<string, object>)level, callback));
+    }
+
+	/// <summary>
+	/// Loads a playerlevel
+	/// </summary>
+	/// <param name="levelid"> The levelID to load</param>
+	/// <param name="callback"> The callback function</param>
 	public void Load(string levelid, Action<PlayerLevel, PResponse> callback)
 	{
-		var postdata = new Dictionary<string,object>
+        Load<PlayerLevel>(levelid, callback);
+	}
+
+    /// <summary>
+    /// Loads a PlayerLevel
+    /// </summary>
+    /// <typeparam name="T">Type of PlayerLevel (T : Playerlevel)</typeparam>
+    /// <param name="levelid"></param>
+    /// <param name="callback"></param>
+    public void Load<T>(string levelid, Action<T, PResponse> callback) where T: PlayerLevel, new()
+    {
+        var postdata = new Dictionary<string, object>
 		{
 			{"levelid", levelid }
 		};
-		
-		Playtomic.API.StartCoroutine(SendSaveLoadRequest(SECTION, LOAD, postdata, callback));
-	}
 
-	private IEnumerator SendSaveLoadRequest(string section, string action, Dictionary<string,object> postdata, Action<PlayerLevel, PResponse> callback)
+        Playtomic.API.StartCoroutine(SendSaveLoadRequest<T>(SECTION, LOAD, postdata, callback));
+    }
+    
+	private IEnumerator SendSaveLoadRequest<T>(string section, string action, Dictionary<string,object> postdata, Action<T, PResponse> callback) where T : PlayerLevel
 	{ 
 		var www = PRequest.Prepare (section, action, postdata);
 		yield return www;
 		
 		var response = PRequest.Process(www);
-		PlayerLevel level = null;
+		T level = default(T);
 		
 		if (response.success)
 		{
-			level = new PlayerLevel((Dictionary<string,object>) response.json["level"]);
+			level = (T) new PlayerLevel((Dictionary<string,object>) response.json["level"]);
 		}
 		
 		callback(level, response);
 	}
-	
-	/**
-	 * Lists levels
-	 * @param	options	Dictionary<string,object>	The listing options
-	 * @param 	callback	Action<List<PlayerLevel>, int, PResponse>	Callback function
-	 */
+
+
+    /// <summary>
+    /// Lists Levels
+    /// </summary>
+    /// <param name="options"></param>
+    /// <param name="callback"></param>
 	public void List(PPlayerLevelOptions options, Action<List<PlayerLevel>, int, PResponse> callback)
 	{
-		Playtomic.API.StartCoroutine(SendListRequest(SECTION, LIST, options, callback));
+        List<PPlayerLevelOptions, PlayerLevel>(options, callback);
 	}
+
+    /// <summary>
+    /// Lists Levels
+    /// </summary>
+    /// <typeparam name="T"> Type of LevelOptions (T : PPlayerLevelOptions)</typeparam>
+    /// <typeparam name="U"> Type of Level (U : PlayerLevel)</typeparam>
+    /// <param name="options"></param>
+    /// <param name="callback"></param>
+    public void List<T,U>(T options, Action<List<U>, int, PResponse> callback) where T : PPlayerLevelOptions ,new() where U : PlayerLevel, new()
+    {
+        Playtomic.API.StartCoroutine(SendListRequest(SECTION, LIST, options, callback));
+    }
 	
-	private IEnumerator SendListRequest(string section, string action, Dictionary<string,object> postdata, Action<List<PlayerLevel>, int, PResponse> callback) 
+	private IEnumerator SendListRequest<T>(string section, string action, Dictionary<string,object> postdata, Action<List<T>, int, PResponse> callback) where T: PlayerLevel, new()
 	{
 		var www = PRequest.Prepare(SECTION, LIST, postdata);
 		yield return www;
 		
 		var response = PRequest.Process(www);
-		List<PlayerLevel> levels = null;
+		List<T> levels = null;
 		int numlevels = 0;
 	
 		if (response.success)
 		{
 			var data = (Dictionary<string,object>)response.json;
-			levels = new List<PlayerLevel>();
+			levels = new List<T>();
 			numlevels = (int)(double)data["numlevels"];
 			
 			var levelarr = (List<object>)data["levels"];
 			
 			for(var i=0; i<levelarr.Count; i++)
 			{
-				levels.Add(new PlayerLevel((Dictionary<string,object>) levelarr[i]));
+				levels.Add((T) new PlayerLevel((Dictionary<string,object>) levelarr[i]));
 			}
 		}
 		
 		callback(levels, numlevels, response);
 	}
 	
-	/**
-	 * Rates a level
-	 * @param	levelid	String	The level id
-	 * @param	rating	Int		Rating from 1 - 10
-	 * @param	callback	Action<PResponse> Your callback function
-	 */
+	/// <summary>
+	/// Rates a level
+	/// </summary>
+	/// <param name="levelid">The LevelID</param>
+	/// <param name="rating">The rating</param>
+	/// <param name="callback">Callback function</param>
 	public void Rate(string levelid, int rating, Action<PResponse> callback)
 	{
 		if(rating < 1 || rating > 10)

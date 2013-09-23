@@ -6,6 +6,7 @@ public class Playtomic : MonoBehaviour
 	private PLeaderboards _leaderboards;
 	private PPlayerLevels _playerlevels;
     private PPlayerChallenges _playerchallenges;
+    private PPlayerProfiles _playerprofiles;
 	private PGeoIP _geoip;
 	private PGameVars _gamevars;
 	private PAchievements _achievements;
@@ -40,6 +41,8 @@ public class Playtomic : MonoBehaviour
 		_instance._gamevars = new PGameVars();
 		_instance._achievements = new PAchievements();
 		_instance._newsletter = new PNewsletter();
+        _instance._playerchallenges = new PPlayerChallenges();
+        _instance._playerprofiles = new PPlayerProfiles();
 		
 		PRequest.Initialise(publickey, privatekey, apiurl);
 				
@@ -83,5 +86,10 @@ public class Playtomic : MonoBehaviour
     public static PPlayerChallenges PlayerChallenges
     {
         get { return _instance._playerchallenges; }
+    }
+
+    public static PPlayerProfiles PlayerProfiles
+    {
+        get { return _instance._playerprofiles; }
     }
 }

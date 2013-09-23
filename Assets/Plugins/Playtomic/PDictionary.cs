@@ -129,6 +129,22 @@ public class PDictionary : Dictionary<string,object> {
 		return r;
 	}
 
+    protected List<string> GetStringList(string s)
+    {
+        List<string> r = null;
+
+        if (ContainsKey(s))
+        {
+            r = new List<string>();
+
+            foreach (var v in (IList)this[s])
+            {
+                r.Add(v.ToString());
+            }
+        }
+        return r;
+    }
+
 	protected void SetProperty(string key, object value) 
 	{
 		if (ContainsKey(key))

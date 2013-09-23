@@ -8,6 +8,11 @@ public class PChallengeEvent : PDictionary
 
     public PChallengeEvent(IDictionary data) : base(data) { }
 
+    public Dictionary<string, object> Data
+    {
+        get { return GetDictionary<string, object>("data"); }
+    }
+
     /// <summary>
     /// Dictionary<playerid,player score/result, created serverside
     /// </summary>
@@ -23,11 +28,23 @@ public class PChallengeEvent : PDictionary
     {
         get
         {
+
             if (ContainsKey("replays"))
                 return GetDictionary<string, object>("replays");
             else
                 return null;
-            
         }
+    }
+
+    public string LevelName
+    {
+        get { return GetString("levelname"); }
+        set { SetProperty("levelname", value); }
+    }
+
+    public int LevelIndex
+    {
+        get { return GetInt("sceneindex"); }
+        set { SetProperty("sceneindex", value); }
     }
 }
