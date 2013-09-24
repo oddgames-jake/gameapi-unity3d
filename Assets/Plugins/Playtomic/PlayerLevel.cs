@@ -13,8 +13,7 @@ public class PlayerLevel : PDictionary
 		{			
 			if(x == "date") 
 			{
-				var d = new DateTime(1970, 1, 1, 0, 0, 0);
-				date = d.AddSeconds ((double)data[x]);
+				date = TimeUtils.FromUnixTime((int)data[x]);
 			} 
 			else 
 			{
