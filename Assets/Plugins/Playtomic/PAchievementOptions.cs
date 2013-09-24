@@ -13,7 +13,7 @@ public class PAchievementOptions : PDictionary
 	
 	public List<string> friendslist 
 	{
-		get { return GetList<string> ("friendslist"); }
+		get { return GetStringList ("friendslist"); }
 		set { SetProperty("friendslist", value); }
 	}
 	

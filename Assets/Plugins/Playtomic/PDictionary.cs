@@ -103,6 +103,8 @@ public class PDictionary : Dictionary<string,object> {
         return d;
     }
 	
+    // NOTE: Heisenbug found in this function when T = string. (something Mono related)
+    // To ensure safety use the function below to get List<string>s
 	protected List<T> GetList<T>(string s) 
 	{	
 		List<T> r = null;
