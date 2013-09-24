@@ -60,7 +60,7 @@ public class PPlayerChallenges
 			{"challengeid", challengeid }
 		};
 
-        Playtomic.API.StartCoroutine(SendSaveLoadRequest(SECTION, LOAD, postdata, callback));
+        Playtomic.API.StartCoroutine(SendSaveLoadRequest<T>(SECTION, LOAD, postdata, callback));
     }
 
     private IEnumerator SendSaveLoadRequest<T>(string section, string action, Dictionary<string, object> postdata, Action<T, PResponse> callback) where T : PlayerChallenge
@@ -86,15 +86,13 @@ public class PPlayerChallenges
     /// <param name="callback"> Callback Function</param>
     public void List(string playerID, Action<List<PlayerChallenge>, int, PResponse> callback)
     {
-        var postdata = new Dictionary<string, object>();
-        postdata.Add("playerid", playerID);
-        Playtomic.API.StartCoroutine(SendListRequest(SECTION, LIST, postdata, callback));
+        List<PlayerChallenge>(playerID, callback);
     }
 
     /// <summary>
     /// Returns a List of Challenges a Player is in
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T"> DataType of Challenge (T : PlayerChallenge)</typeparam>
     /// <param name="playerID"></param>
     /// <param name="callback"></param>
     public void List<T>(string playerID, Action<List<T>, int, PResponse> callback) where T  : PlayerChallenge, new()
@@ -136,12 +134,25 @@ public class PPlayerChallenges
     /// <summary>
     /// Finds a new challenge partner
     /// </summary>
+    /// <param name="profile"></param>
+    /// <param name="ignoredIDs">A list of IDs to ignore, should include existing matches and blocked players</param>
+    /// <param name="callback"></param>
+    public void Find(PlayerProfile profile, List<string> ignoredIDs, Action<PlayerChallenge, PResponse> callback)
+    {
+        Find<PlayerProfile, PlayerChallenge>(profile,ignoredIDs, callback);
+    }
+
+    /// <summary>
+    /// Finds a new challenge partner
+    /// </summary>
     /// <typeparam name="T"> Type of Profile (T : PlayerProfile)</typeparam>
     /// <typeparam name="U"> Type of Challenge (U : PlayerChallenge)</typeparam>
     /// <param name="profile">Players current profile</param>
     /// <param name="ignoredIDs"> A list of IDs to ignore, should include existing matches and blocked players</param>
     /// <param name="callback"></param>
-    public void Find<T,U>(T profile, List<string> ignoredIDs, Action<U, PResponse> callback) where T : PlayerProfile, new() where U: PlayerChallenge, new()
+    public void Find<T, U>(T profile, List<string> ignoredIDs, Action<U, PResponse> callback)
+        where T : PlayerProfile, new()
+        where U : PlayerChallenge, new()
     {
         var postdata = new Dictionary<string, object>();
         postdata.Add("playerid", profile.ID);
@@ -152,17 +163,6 @@ public class PPlayerChallenges
         postdata.Add("blockedids", ignoredIDs);
 
         Playtomic.API.StartCoroutine(FindChallenge<U>(postdata, callback));
-    }
-
-    /// <summary>
-    /// Finds a new challenge partner
-    /// </summary>
-    /// <param name="profile"></param>
-    /// <param name="ignoredIDs">A list of IDs to ignore, should include existing matches and blocked players</param>
-    /// <param name="callback"></param>
-    public void Find(PlayerProfile profile, List<string> ignoredIDs, Action<PlayerChallenge, PResponse> callback)
-    {
-        Find<PlayerProfile, PlayerChallenge>(profile,ignoredIDs, callback);
     }
 
     private IEnumerator FindChallenge<T>(Dictionary<string, object> postdata, Action<T, PResponse> callback) where T: PlayerChallenge

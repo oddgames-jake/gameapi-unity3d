@@ -43,10 +43,7 @@ public class PlayerChallenge : PDictionary
 
     public List<string> PlayerIDs
     {
-        get
-        {
-            return GetStringList("playerids");           
-        }
+        get { return GetStringList("playerids"); }
     }
 
     public Dictionary<string, PlayerChallengeInfo> PlayerData
@@ -63,10 +60,7 @@ public class PlayerChallenge : PDictionary
                 }
                 return toRet;
             }
-            else
-            {
                 return new Dictionary<string, PlayerChallengeInfo>();
-            }
         }
     }
 
@@ -75,12 +69,9 @@ public class PlayerChallenge : PDictionary
         return (PlayerIDs[CurrentTurn] != id && GetBool("hide"));
     }
 
-    /// <summary>
-    /// Dictionary<eventid,eventdata>
-    /// </summary>
-    public Dictionary<string,PChallengeEvent> Events
+    public Dictionary<string, PChallengeEvent> Events
     {
-         get
+        get
         {
             if (ContainsKey("events"))
             {
@@ -107,7 +98,7 @@ public class PlayerChallenge : PDictionary
                 return Events;
             }
         }
-        //get { return GetDictionary<string,PChallengeEvent>("events"); }
+
         set { SetProperty("events", value); }
     }
 
@@ -119,14 +110,9 @@ public class PlayerChallenge : PDictionary
         get
         {
             if (ContainsKey("startdate"))
-            {
-                return (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) + 
-                    TimeSpan.FromSeconds((int)this["startdate"])).ToLocalTime();
-            }
+                return TimeUtils.FromUnixTime(GetInt("startdate"));
             else
-            {
                 return DateTime.Now;
-            }
         }
     }
     
@@ -138,19 +124,19 @@ public class PlayerChallenge : PDictionary
         get
         {
             if (ContainsKey("date"))
-            {
-                return (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) +
-                    TimeSpan.FromSeconds((int)this["date"])).ToLocalTime();
-            }
+                return TimeUtils.FromUnixTime(GetInt("date"));
             else
-            {
                 return DateTime.Now;
-            }
         }
     }
 
     public string rdate
     {
-        get { return GetString("rdate"); }
+        get {
+            if (ContainsKey("rdate"))
+                return GetString("rdate");
+            else
+                return "Just Now";
+        }
     }
 }
