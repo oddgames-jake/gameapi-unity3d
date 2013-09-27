@@ -13,7 +13,7 @@ public class PlayerLevel : PDictionary
 		{			
 			if(x == "date") 
 			{
-				date = TimeUtils.FromUnixTime((int)data[x]);
+				date = TimeUtils.FromUnixTime(data[x]);
 			} 
 			else 
 			{
