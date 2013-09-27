@@ -135,3 +135,14 @@ public class PResponse
 		}
 	}
 }
+
+public class QuickResponse<T> : ResponseBase
+{
+    public T ResponseObject;
+}
+
+public class ResponseBase
+{
+    public int errorcode;
+    public bool success;
+}

@@ -2,11 +2,12 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 public class PPlayerChallenges
 {
     private const string SECTION = "playerchallenges";
-    private const string SAVE = "save";
+    private const string CREATE = "create";
     private const string LIST = "list";
     private const string LOAD = "load";
     private const string UPDATE = "update";
@@ -23,7 +24,6 @@ public class PPlayerChallenges
     public void Save(PlayerChallenge challenge, Action<PlayerChallenge, PResponse> callback)
     {
         Save<PlayerChallenge>(challenge, callback);
-        //Playtomic.API.StartCoroutine(SendSaveLoadRequest(SECTION, SAVE, (Dictionary<string, object>)challenge, callback));
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public class PPlayerChallenges
     /// <param name="callback"></param>
     public void Save<T>(T challenge, Action<T, PResponse> callback) where T : PlayerChallenge, new()
     {
-        Playtomic.API.StartCoroutine(SendSaveLoadRequest(SECTION, SAVE, (Dictionary<string, object>)challenge, callback));
+        Playtomic.API.StartCoroutine(SendSaveLoadRequest(CREATE, challenge, callback));
     }
 
     /// <summary>
@@ -60,12 +60,12 @@ public class PPlayerChallenges
 			{"challengeid", challengeid }
 		};
 
-        Playtomic.API.StartCoroutine(SendSaveLoadRequest<T>(SECTION, LOAD, postdata, callback));
+        Playtomic.API.StartCoroutine(SendSaveLoadRequest<T>(LOAD, postdata, callback));
     }
 
-    private IEnumerator SendSaveLoadRequest<T>(string section, string action, Dictionary<string, object> postdata, Action<T, PResponse> callback) where T : PlayerChallenge
+    private IEnumerator SendSaveLoadRequest<T>(string action, Dictionary<string, object> postdata, Action<T, PResponse> callback) where T : PlayerChallenge
     {
-        var www = PRequest.Prepare(section, action, postdata);
+        var www = PRequest.Prepare(SECTION, action, postdata);
         yield return www;
 
         var response = PRequest.Process(www);
@@ -97,38 +97,57 @@ public class PPlayerChallenges
     /// <param name="callback"></param>
     public void List<T>(string playerID, Action<List<T>, int, PResponse> callback) where T  : PlayerChallenge, new()
     {
-        var postdata = new Dictionary<string, object>();
-        postdata.Add("playerid", playerID);
-        Playtomic.API.StartCoroutine(SendListRequest(SECTION, LIST, postdata, callback));
+        var postdata = new Dictionary<string, object>
+        {
+            {"playerid", playerID}
+        };
+        Playtomic.API.StartCoroutine(SendListRequest(postdata, callback));
     }
 
-    private IEnumerator SendListRequest<T>(string section, string action, Dictionary<string, object> postdata, Action<List<T>, int, PResponse> callback) where T: PlayerChallenge,new()
+    private IEnumerator SendListRequest<T>(Dictionary<string, object> postdata, Action<List<T>, int, PResponse> callback) where T: PlayerChallenge,new()
     {
 
         var www = PRequest.Prepare(SECTION, LIST, postdata);
         yield return www;
-
-        var response = PRequest.Process(www);
-
+        
+        string data = www.text;
         List<T> challenges = null;
         int numchallenges = 0;
 
-        if (response.success)
+        var response = default(QuickResponse<ListChallengeResponse<T>>);
+
+        Thread t = new System.Threading.Thread(new ThreadStart(() =>
         {
-            var data = (Dictionary<string, object>)response.json;
-            
-            challenges = new List<T>();
-            numchallenges = (int)(double)data["numchallenges"];
+            response = PRequest.FastProcessThreadsafe<ListChallengeResponse<T>>(data);
+        }));
 
-            var challengearr = (List<object>)data["challenges"];
+        t.Start();
 
-            for (var i = 0; i < challengearr.Count; i++)
-            {
-                challenges.Add((T) new PlayerChallenge((Dictionary<string,object>) challengearr[i]));
-            }
+        //wait for thread to finish
+        while (t.ThreadState == ThreadState.Running)
+        {
+            yield return null;
         }
 
-        callback(challenges, numchallenges, response);
+        if (response.success)
+        {
+            var ChallengeArray = response.ResponseObject.challenges;
+
+            challenges = new List<T>();
+
+            for (int i = 0; i < ChallengeArray.Length; i++)
+            {
+                challenges.Add(ChallengeArray[i]);
+            }
+                    
+            numchallenges = challenges.Count;
+        }
+
+        PResponse resp = new PResponse();
+        resp.errorcode = response.errorcode;
+        resp.success = response.success;
+
+        callback(challenges, numchallenges, resp);
     }
 
     /// <summary>
@@ -154,13 +173,15 @@ public class PPlayerChallenges
         where T : PlayerProfile, new()
         where U : PlayerChallenge, new()
     {
-        var postdata = new Dictionary<string, object>();
-        postdata.Add("playerid", profile.ID);
-        postdata.Add("elo", profile.Elo);
-        postdata.Add("playername", profile.Name);
-        postdata.Add("playtime", profile.PlayTime);
-        postdata.Add("responsetime", profile.ResponseTime);
-        postdata.Add("blockedids", ignoredIDs);
+        var postdata = new Dictionary<string, object>
+        {
+            {"playerid", profile.playerid},
+            {"elo", profile.elo},
+            {"playername", profile.name},
+            {"playtime", profile.playtime},
+            {"responsetime", profile.reponsetime},
+            {"blockedids", ignoredIDs}
+        };
 
         Playtomic.API.StartCoroutine(FindChallenge<U>(postdata, callback));
     }
@@ -169,16 +190,33 @@ public class PPlayerChallenges
     {
         var www = PRequest.Prepare(MATCHMAKER, FIND, postdata);
         yield return www;
-
-        var response = PRequest.Process(www);
         T challenge = default(T);
+        
+        string data = www.text;
 
-        if (response.success)
+        var response = default(QuickResponse<FindChallengeResponse<T>>);
+
+        Thread t = new System.Threading.Thread(new ThreadStart(() =>
         {
-            challenge = (T) response.json["profile"];
+            response = PRequest.FastProcessThreadsafe<FindChallengeResponse<T>>(data);
+        }));
+
+        t.Start();
+
+        //wait for thread to finish
+        while (t.ThreadState == ThreadState.Running)
+        {
+            yield return null;
         }
 
-        callback(challenge, response);
+        if (response.success)
+            challenge = response.ResponseObject.profile;
+
+        var resp = new PResponse();
+        resp.success = response.success;
+        resp.errorcode = response.errorcode;       
+
+        callback(challenge, resp);
     }
 
     /// <summary>
@@ -199,23 +237,39 @@ public class PPlayerChallenges
     /// <param name="callback"></param>
     public void Update<T>(T challenge, Action<T, PResponse> callback) where T : PlayerChallenge, new()
     {
-        Playtomic.API.StartCoroutine(SendUpdate<T>(SECTION, UPDATE, (Dictionary<string, object>)challenge, callback));
+        Playtomic.API.StartCoroutine(SendUpdate<T>(SECTION, UPDATE, challenge, callback));
     }
 
     private IEnumerator SendUpdate<T>(string section, string action, Dictionary<string, object> postdata, Action<T, PResponse> callback) where T : PlayerChallenge
     {
         var www = PRequest.Prepare(section, action, postdata);
         yield return www;
-
-        var response = PRequest.Process(www);
         T challenge = default(T);
+        
+        string data = www.text;
 
-        if (response.success)
+        var response = default(QuickResponse<UpdateChallengeResponse<T>>);
+
+        Thread t = new System.Threading.Thread(new ThreadStart(() =>
         {
-            challenge = (T) new PlayerChallenge((Dictionary<string, object>) response.json["challenge"]);
+            response = PRequest.FastProcessThreadsafe<UpdateChallengeResponse<T>>(data);
+        }));
+
+        t.Start();
+
+        //wait for thread to finish
+        while (t.ThreadState == ThreadState.Running)
+        {
+            yield return null;
         }
 
-        callback(challenge, response);
+        challenge = response.ResponseObject.challenge;
+
+        var resp = new PResponse();
+        resp.errorcode = response.errorcode;
+        resp.success  = response.success;
+
+        callback(challenge, resp);
     }
 
     /// <summary>
@@ -223,36 +277,41 @@ public class PPlayerChallenges
     /// </summary>
     /// <typeparam name="T"> Replay DataType</typeparam>
     /// <typeparam name="U"> Result DataType</typeparam>
+    /// <param name="endturn"> Does this result end a turn</param>
     /// <param name="playerid"> Current player's ID</param>
-    /// <param name="challengeid"> Current ChallengeID</param>
-    /// <param name="eventid"> The event ID</param>
+    /// <param name="pc"> Current PlayerChallenge</param>
     /// <param name="replay"> Replay Data</param>
     /// <param name="result"> Result Data</param>
     /// <param name="callback"> Callback</param>
-    public void SendReplay<T,U>(bool endturn, string playerid,PlayerChallenge pc,T replay,U result, Action<bool, PResponse> callback)
+    public void SendReplay<T,U>(bool endturn, string playerid,PlayerChallenge pc,T replay,U result, Action<bool> callback)
     {
-        var postdata = new Dictionary<string, object>();
-        postdata.Add("playerid", playerid);
-        postdata.Add("challengeid", pc.ChallengeID);
-        postdata.Add("result", result);
-        postdata.Add("replay", replay);
-        postdata.Add("eventid", pc.EventID);
-        postdata.Add("levelname", pc.Events[pc.EventID].LevelName);
-        postdata.Add("sceneindex", pc.Events[pc.EventID].LevelIndex);
-        postdata.Add("endturn", endturn);
-        Playtomic.API.StartCoroutine(sendReplay(SECTION, POSTRESULT, postdata, callback));
+        var postdata = new Dictionary<string, object>
+        {
+            {"playerid", playerid},
+            {"challengeid", pc.challengeid},
+            {"result", result},
+            {"replay", replay},
+            {"eventid", pc.eventid},
+            {"levelname", pc.events[pc.eventid].levelname},
+            {"sceneindex", pc.events[pc.eventid].sceneindex},
+            {"endturn", endturn}
+        };
+        Playtomic.API.StartCoroutine(sendReplay(postdata, callback));
     }
 
-    private IEnumerator sendReplay(string section, string action, Dictionary<string,object> postdata, Action<bool, PResponse> callback)
+    private IEnumerator sendReplay(Dictionary<string,object> postdata, Action<bool> callback)
     {
-        var www = PRequest.Prepare(section, action, postdata);
+        var www = PRequest.Prepare(SECTION, POSTRESULT, postdata);
         yield return www;
+        // no point threading this one due to minute data
+        var response = PRequest.FastProcess<ReplaySentResponse>(www);
 
-        var response = PRequest.Process(www);
-        Debug.Log(response.success + " " + response.errorcode);
-        bool success = response.success;
+        callback(response.success);
+    }
 
-        callback(success, response);
+    class ReplaySentResponse : ResponseBase
+    {
+        public bool challenge;
     }
 
     /// <summary>
@@ -265,11 +324,13 @@ public class PPlayerChallenges
     /// <param name="callback"> Callback function</param>
     public void GetReplay<T>(string challengeid, string eventid, string retrieveid, Action<T, PResponse> callback)
     {
-        var postdata = new Dictionary<string, object>();
-        postdata.Add("challengeid", challengeid);
-        postdata.Add("eventid", eventid);
-        postdata.Add("retrieveid", retrieveid);
-        Playtomic.API.StartCoroutine(getReplay(SECTION, GETREPLAY, postdata, callback));
+        var postdata = new Dictionary<string, object>
+        {
+            {"challengeid", challengeid},
+            {"eventid", eventid},
+            {"retrieveid", retrieveid}
+        };
+        Playtomic.API.StartCoroutine(getReplay<T>(SECTION, GETREPLAY, postdata, callback));
     }
 
     private IEnumerator getReplay<T>(string section,string action, Dictionary<string,object> postdata, Action<T,PResponse> callback)
@@ -277,19 +338,50 @@ public class PPlayerChallenges
         var www = PRequest.Prepare(section, action, postdata);
         yield return www;
         
-        var response = PRequest.Process(www);
         T replay = default(T);
-        if (response.success)
-        {
-            if (typeof(T).IsSubclassOf(typeof(PDictionary)))
-            {
-                replay = 
-                    (T) (object) new PDictionary((Dictionary<string, object>) ((Dictionary<string, object>) response.json["challenge"])["replay"]);
-            }
-            else
-                replay = (T)((Dictionary<string, object>)response.json["challenge"])["replay"];
-        }
-        callback(replay, response);
-    }
 
+        string data = www.text;
+
+        var response = default(QuickResponse<GetReplayResponse<T>>);
+
+        // spool deserialization off to another thread, allows UI to continue updating in the meantime
+        Thread t = new System.Threading.Thread(new ThreadStart(() =>
+        {
+            response = PRequest.FastProcessThreadsafe<GetReplayResponse<T>>(data);
+        }));
+        t.Start();
+
+        //wait for thread to finish
+        while (t.ThreadState == ThreadState.Running)
+        {
+            yield return null;
+        }
+        replay = response.ResponseObject.challenge["replay"];
+
+        PResponse resp = new PResponse();
+        resp.errorcode = response.errorcode;
+        resp.success = response.success;
+        callback(replay, resp);
+    }
+}
+
+public class ListChallengeResponse<T> : ResponseBase
+{
+    public T[] challenges;
+    public int numchallenges;
+}
+
+public class GetReplayResponse<T> : ResponseBase
+{
+    public Dictionary<string,T> challenge;
+}
+
+public class UpdateChallengeResponse<T> : ResponseBase
+{
+    public T challenge;
+}
+
+public class FindChallengeResponse<T> : ResponseBase
+{
+    public T profile;
 }

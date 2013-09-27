@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 public class PPlayerProfiles
 {
@@ -13,35 +14,64 @@ public class PPlayerProfiles
 
     public void Update(PlayerProfile profile, Action<PlayerProfile, PResponse> callback)
     {
+        Update<PlayerProfile>(profile, callback);
+    }
+
+    public void Update<T>(T profile, Action<T, PResponse> callback) where T : PlayerProfile, new()
+    {
         var postdata = (Dictionary<string, object>)profile;
        
-        Playtomic.API.StartCoroutine(SendProfileActionRequest(SECTION, UPDATE, postdata, callback));
+        Playtomic.API.StartCoroutine(SendProfileActionRequest<T>(SECTION, UPDATE, postdata, callback));
     }
 
     public void Load(string playerid, Action<PlayerProfile,PResponse> callback)
     {
-        var postdata = new Dictionary<string, object>();
-        postdata.Add("playerid", playerid);
-        Playtomic.API.StartCoroutine(SendProfileActionRequest(SECTION, LOAD, postdata, callback));
+        Load<PlayerProfile>(playerid, callback);
     }
 
-    IEnumerator SendProfileActionRequest(string section, string action, Dictionary<string, object> postdata, Action<PlayerProfile, PResponse> callback)
+    public void Load<T>(string playerid, Action<T, PResponse> callback)
+    {
+        var postdata = new Dictionary<string, object>
+        {
+            {"playerid", playerid}
+        };
+        Playtomic.API.StartCoroutine(SendProfileActionRequest<T>(SECTION, LOAD, postdata, callback));
+    }
+
+    IEnumerator SendProfileActionRequest<T>(string section, string action, Dictionary<string, object> postdata, Action<T, PResponse> callback)
     {
         var www = PRequest.Prepare(section, action, postdata);
         yield return www;
 
-        var response = PRequest.Process(www);
-        PlayerProfile profile = null;
+        string data = www.text;
 
-        if(response.success)
-            profile = new PlayerProfile((Dictionary<string,object>)response.json["profile"]);
-        callback(profile, response);
+        var response = default(QuickResponse<ProfileResponse<T>>);
+
+        Thread t = new System.Threading.Thread(new ThreadStart(() =>
+            {
+                response = PRequest.FastProcessThreadsafe<ProfileResponse<T>>(data);
+            }));
+        t.Start();
+
+        //wait for thread to finish
+        while (t.ThreadState == ThreadState.Running)
+        { 
+            yield return null;
+        }
+
+        PResponse resp = new PResponse();
+        resp.success = response.success;
+        resp.errorcode = response.errorcode;
+
+        callback(response.ResponseObject.profile, resp);
     }
 
     public void Ping(string playerid)
     {
-        var postdata = new Dictionary<string, object>();
-        postdata.Add("playerid", playerid);
+        var postdata = new Dictionary<string, object>
+        {
+            {"playerid", playerid}
+        };
         Playtomic.API.StartCoroutine(SendPing(postdata));
     }
 
@@ -49,18 +79,29 @@ public class PPlayerProfiles
     {
         var www = PRequest.Prepare(SECTION, PING, postdata);
         yield return www;
-        var response = PRequest.Process(www);
+        // no point threading this one due to minute size of response
+        var response = PRequest.FastProcess<ResponseBase>(www);
+        // If ping unsuccessful resend
+        if (!response.success)
+            SendPing(postdata);
     }
 
     public void Create(string UID, PlayerProfile profile, Action<PlayerProfile,PResponse> callback)
     {
-        var postdata = new Dictionary<string, object>();
-        postdata.Add("playerid", UID);
-        postdata.Add("playername", profile.Name);
-        postdata.Add("elo", 1400);
-        postdata.Add("playtime", 1);
-        postdata.Add("responsetime", 1);
+        var postdata = new Dictionary<string, object>
+        {
+            {"playerid", UID},
+            {"playername", profile.name},
+            {"elo", 1400},
+            {"playtime", 1},
+            {"responsetime", 1}
+        };
 
         Playtomic.API.StartCoroutine(SendProfileActionRequest(SECTION, CREATE, postdata, callback));
     }
+}
+
+public class ProfileResponse<T> : ResponseBase
+{
+    public T profile;
 }

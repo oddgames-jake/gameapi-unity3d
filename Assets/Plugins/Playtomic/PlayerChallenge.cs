@@ -11,83 +11,113 @@ public class PlayerChallenge : PDictionary
 
     public PlayerChallenge(IDictionary data) : base(data){}
 
-    public string ChallengeID
+    public string challengeid
     {
         get { return GetString("challengeid"); }
+        set { SetProperty("challengeid",value); }
     }
 
-    public int CurrentTurn
+    public int currentturn
     {
         get { return GetInt("currentturn"); }
+        set { SetProperty("currentturn", value); }
     }
 
-    public string EventID
+    public string eventid
     {
-        get { return GetString("eventid"); }
+        get { return ContainsKey("eventid") ? GetString("eventid") : ""; }
         set { SetProperty("eventid", value); }
     }
     public PChallengeEvent CurrentEvent
     {
-        get { return Events[GetString("eventid")]; }
+        get { return events.ContainsKey(eventid) ? events[eventid] : null; }
     }
 
     public bool IsMyTurn(string id)
     {
-        return id == PlayerIDs[CurrentTurn] || IsIdle;
+        return id == playerids[currentturn] || idle;
     }
 
-    public bool IsIdle
+    public bool idle
     {
         get { return GetBool("idle"); }
+        set { SetProperty("idle", value); }
     }
 
-    public List<string> PlayerIDs
+    public List<string> playerids
     {
         get { return GetStringList("playerids"); }
+        set { SetProperty("playerids", value); }
     }
 
-    public Dictionary<string, PlayerChallengeInfo> PlayerData
+    public bool hide
+    {
+        get { return GetBool("hide"); }
+        set { SetProperty("hide", value); }
+    }
+
+    public Dictionary<string, PlayerChallengeInfo> playerinfo
     {
         get
         {
             if (ContainsKey("playerinfo"))
             {
                 var toRet = new Dictionary<string, PlayerChallengeInfo>();
-
-                foreach (var item in (Dictionary<string, object>)this["playerinfo"])
+                if (this["playerinfo"].GetType() == typeof(Dictionary<string, object>))
                 {
-                    toRet.Add(item.Key, new PlayerChallengeInfo((IDictionary)item.Value));
+                    foreach (var item in (Dictionary<string, object>)this["playerinfo"])
+                    {
+                        if (item.Value.GetType() == typeof(Dictionary<string, object>))
+                            toRet.Add(item.Key, new PlayerChallengeInfo((IDictionary)item.Value));
+                    }
+                }
+                else
+                {
+                    foreach (var item in (Dictionary<string, PlayerChallengeInfo>)this["playerinfo"])
+                    {
+                        if (item.Value.GetType() == typeof(PlayerChallengeInfo))
+                            toRet.Add(item.Key, new PlayerChallengeInfo((IDictionary)item.Value));
+                    }
                 }
                 return toRet;
             }
                 return new Dictionary<string, PlayerChallengeInfo>();
         }
+        set
+        {
+            SetProperty("playerinfo", value);
+        }
     }
 
     public bool IsHidden(string id)
     {
-        return (PlayerIDs[CurrentTurn] != id && GetBool("hide"));
+        return (playerids[currentturn] != id && hide);
     }
 
-    public Dictionary<string, PChallengeEvent> Events
+    public Dictionary<string, PChallengeEvent> events
     {
         get
         {
             if (ContainsKey("events"))
             {
                 var toRet = new Dictionary<string, PChallengeEvent>();
+                if (this["events"].GetType() == typeof(Dictionary<string, object>))
+                {
+                    foreach (var item in (Dictionary<string, object>)this["events"])
+                    {
+                        if (item.Value.GetType() == typeof(Dictionary<string, object>))
+                            toRet.Add(item.Key, new PChallengeEvent((IDictionary)item.Value));
+                    }
+                }
+
                 if (this["events"].GetType() == typeof(Dictionary<string, PChallengeEvent>))
                 {
                     foreach (var item in (Dictionary<string, PChallengeEvent>)this["events"])
                     {
-                        toRet.Add(item.Key, new PChallengeEvent((IDictionary)item.Value));
-                    }
-                }
-                else
-                {
-                    foreach (var item in (Dictionary<string, object>)this["events"])
-                    {
-                        toRet.Add(item.Key, new PChallengeEvent((IDictionary)item.Value));
+                        if (item.Value.GetType() == typeof(Dictionary<string, object>))
+                            toRet.Add(item.Key, new PChallengeEvent((IDictionary)item.Value));
+                        if (item.Value.GetType() == typeof(PChallengeEvent))
+                            toRet.Add(item.Key, item.Value);
                     }
                 }
                 return toRet;
@@ -95,7 +125,7 @@ public class PlayerChallenge : PDictionary
             else
             {
                 SetProperty("events", new Dictionary<string, PChallengeEvent>());
-                return Events;
+                return events;
             }
         }
 
@@ -105,38 +135,24 @@ public class PlayerChallenge : PDictionary
     /// <summary>
     /// Datetime the challenge was created
     /// </summary>
-    public DateTime startdate
+    public int startdate
     {
-        get
-        {
-            if (ContainsKey("startdate"))
-                return TimeUtils.FromUnixTime(GetInt("startdate"));
-            else
-                return DateTime.Now;
-        }
+        get { return ContainsKey("startdate") ? GetInt("startdate") : TimeUtils.ToUnixTime(DateTime.Now); }
+        set { SetProperty("startdate", value); }
     }
     
     /// <summary>
     /// DateTime the challenge was last updated
     /// </summary>
-    public DateTime date
+    public int date
     {
-        get
-        {
-            if (ContainsKey("date"))
-                return TimeUtils.FromUnixTime(GetInt("date"));
-            else
-                return DateTime.Now;
-        }
+        get { return ContainsKey("date") ? GetInt("date") : TimeUtils.ToUnixTime(DateTime.Now); }
+        set { SetProperty("date", value); }
     }
 
     public string rdate
     {
-        get {
-            if (ContainsKey("rdate"))
-                return GetString("rdate");
-            else
-                return "Just Now";
-        }
+        get { return ContainsKey("rdate") ? GetString("rdate") : "Just Now"; }
+        set { SetProperty("rdate", value); }
     }
 }

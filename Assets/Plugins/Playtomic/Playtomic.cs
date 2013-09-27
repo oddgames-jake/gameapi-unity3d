@@ -30,8 +30,11 @@ public class Playtomic : MonoBehaviour
 	{
 		if(_instance != null)
 			return;
-			
-		var go = new GameObject("playtomic");
+
+        // Add Unity Extentions to LitJson
+        LitJson.JsonExtend.AddExtentds();
+
+		GameObject go = new GameObject("playtomic");
 		GameObject.DontDestroyOnLoad(go);
 			
 		_instance = go.AddComponent("Playtomic") as Playtomic;

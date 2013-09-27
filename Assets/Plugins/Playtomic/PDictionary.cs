@@ -138,10 +138,12 @@ public class PDictionary : Dictionary<string,object> {
         if (ContainsKey(s))
         {
             r = new List<string>();
-
-            foreach (var v in (IList)this[s])
+            if (this[s] is IList)
             {
-                r.Add(v.ToString());
+                foreach (var v in (IList)this[s])
+                {
+                    r.Add(v.ToString());
+                }
             }
         }
         return r;

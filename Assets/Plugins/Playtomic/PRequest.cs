@@ -61,7 +61,7 @@ internal class PRequest
 
 		if (string.IsNullOrEmpty(www.text))
 			return PResponse.Error(1);
-		
+
 		var results = (Dictionary<string,object>)PJSON.JsonDecode(www.text);
 		
 		if(!results.ContainsKey("success") || !results.ContainsKey("errorcode"))
@@ -73,4 +73,55 @@ internal class PRequest
 		response.json = results;
 		return response;
 	}
+
+    public static QuickResponse<T> FastProcess<T>(WWW www) where T : ResponseBase
+    {
+        var response = new QuickResponse<T>();
+
+        if (www == null)
+            response.errorcode = 1;
+
+        if (www.error != null)
+            response.errorcode = 1;
+
+        if (string.IsNullOrEmpty(www.text))
+            response.errorcode = 1;
+
+        if (response.errorcode != 0)
+        {
+            response.success = false;
+            return response;
+        }
+
+        var results = LitJson.JsonMapper.ToObject<T>(www.text);
+        response.success = results.success;
+        response.errorcode = results.errorcode;
+
+        response.ResponseObject = results;
+        return response;
+    }
+
+    public static QuickResponse<T> FastProcessThreadsafe<T>(string data) where T : ResponseBase
+    {
+        var response = new QuickResponse<T>();
+
+        if (data == null)
+            response.errorcode = 1;
+
+        if (string.IsNullOrEmpty(data))
+            response.errorcode = 1;
+
+        if (response.errorcode != 0)
+        {
+            response.success = false;
+            return response;
+        }
+
+        var results = LitJson.JsonMapper.ToObject<T>(data);
+        response.success = results.success;
+        response.errorcode = results.errorcode;
+
+        response.ResponseObject = results;
+        return response;
+    }
 }

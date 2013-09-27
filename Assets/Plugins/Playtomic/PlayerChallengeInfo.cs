@@ -8,53 +8,34 @@ public class PlayerChallengeInfo : PDictionary
 
     public PlayerChallengeInfo(IDictionary data) : base(data) { }
 
-    public string Name
+    public string name
     {
-        get
-        {
-            try { return GetString("name"); }
-            catch { return "error"; }
-        }
+        get { return ContainsKey("name") ? GetString("name") : "error"; }
+        set { SetProperty("name", value); }
     }
 
-    public bool IsThisTurn
+    public bool myturn
     {
-        get { return GetBool("myturn"); }
+        get { return ContainsKey("myturn") ? GetBool("myturn") : false; }
+        set { SetProperty("myturn", value); }
     }
 
-    public bool HasSeenChallenge
+    public bool hasseen
     {
-        get { return GetBool("hasseen"); }
+        get { return ContainsKey("hasseen") ? GetBool("hasseen") : false; }
+        set { SetProperty("hasseen", value); }
     }
 
-    public int Wins
+    public int wins
     {
-        get
-        {
-            if (ContainsKey("wins"))
-                return GetInt("wins");
-            else
-                return 0;
-        }
-        set
-        {
-            SetProperty("wins", value);
-        }
+        get { return ContainsKey("wins") ? GetInt("wins") : 0; }
+        set { SetProperty("wins", value); }
     }
 
-    public int Losses
+    public int losses
     {
-        get
-        {
-            if (ContainsKey("losses"))
-                return GetInt("losses");
-            else
-                return 0;
-        }
-        set
-        {
-            SetProperty("losses", value);
-        }
+        get { return ContainsKey("losses") ? GetInt("losses") : 0; }
+        set { SetProperty("losses", value); }
     }
 
 }
