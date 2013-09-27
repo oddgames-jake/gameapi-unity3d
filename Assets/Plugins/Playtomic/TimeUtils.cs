@@ -8,9 +8,14 @@ public class TimeUtils
             new System.DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
     }
 
-    public static DateTime FromUnixTime(int timestamp)
+    public static DateTime FromUnixTime(object timestamp)
     {
-        return (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) +
-            TimeSpan.FromSeconds(timestamp)).ToLocalTime();
+        double dbl;
+        if (double.TryParse(timestamp.ToString(), out dbl))
+        {
+            return (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) +
+                TimeSpan.FromSeconds(dbl)).ToLocalTime();
+        }
+        return DateTime.Now;
     }
 }

@@ -20,4 +20,25 @@ public class GameVar : PDictionary
 		set { SetProperty ("value", value); }
 	}
 
+    public T GetValue<T>(T defaultValue)
+    {
+        if (typeof(T).IsAssignableFrom(this["value"].GetType()))
+        {
+            return (T) this["value"];
+        }
+
+        return defaultValue;
+    }
+
+    public bool GetValue<T>(T defaultValue, out T returnValue)
+    {
+        if (typeof(T).IsAssignableFrom(this["value"].GetType()))
+        {
+            returnValue = (T) this["value"];
+            return true;
+        }
+
+        returnValue = default(T);
+        return false;
+    }
 }

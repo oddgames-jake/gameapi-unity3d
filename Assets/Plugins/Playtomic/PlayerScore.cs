@@ -13,7 +13,7 @@ public class PlayerScore : PDictionary
 		{			
 			if(x == "date") 
 			{
-				date = TimeUtils.FromUnixTime((int)data[x]);
+				date = TimeUtils.FromUnixTime((int)(double)data[x]);
 			} 
 			else 
 			{

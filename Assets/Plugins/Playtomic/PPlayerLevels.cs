@@ -29,7 +29,7 @@ public class PPlayerLevels
     /// <param name="callback"> Callback Funtion</param>
     public void Save<T>(T level, Action<T, PResponse> callback) where T : PlayerLevel, new()
     {
-        Playtomic.API.StartCoroutine(SendSaveLoadRequest(SECTION, SAVE, (Dictionary<string, object>)level, callback));
+        Playtomic.API.StartCoroutine(SendSaveLoadRequest(SECTION, SAVE, level, callback));
     }
 
 	/// <summary>
@@ -94,10 +94,10 @@ public class PPlayerLevels
     /// <param name="callback"></param>
     public void List<T,U>(T options, Action<List<U>, int, PResponse> callback) where T : PPlayerLevelOptions ,new() where U : PlayerLevel, new()
     {
-        Playtomic.API.StartCoroutine(SendListRequest(SECTION, LIST, options, callback));
+        Playtomic.API.StartCoroutine(SendListRequest(options, callback));
     }
 	
-	private IEnumerator SendListRequest<T>(string section, string action, Dictionary<string,object> postdata, Action<List<T>, int, PResponse> callback) where T: PlayerLevel, new()
+	private IEnumerator SendListRequest<T>(Dictionary<string,object> postdata, Action<List<T>, int, PResponse> callback) where T: PlayerLevel, new()
 	{
 		var www = PRequest.Prepare(SECTION, LIST, postdata);
 		yield return www;
@@ -108,7 +108,7 @@ public class PPlayerLevels
 	
 		if (response.success)
 		{
-			var data = (Dictionary<string,object>)response.json;
+			var data = response.json;
 			levels = new List<T>();
 			numlevels = (int)(double)data["numlevels"];
 			
@@ -143,10 +143,10 @@ public class PPlayerLevels
 			{"rating", rating}
 		};
 		
-		Playtomic.API.StartCoroutine(SendRateRequest(SECTION, RATE, postdata, callback));
+		Playtomic.API.StartCoroutine(SendRateRequest(postdata, callback));
 	}
 
-	private IEnumerator SendRateRequest(string section, string action, Dictionary<string,object> postdata, Action<PResponse> callback)
+	private IEnumerator SendRateRequest(Dictionary<string,object> postdata, Action<PResponse> callback)
 	{		
 		var www = PRequest.Prepare(SECTION, RATE, postdata);
 		yield return www;
