@@ -78,17 +78,9 @@ internal class PRequest
     {
         var response = new QuickResponse<T>();
 
-        if (www == null)
-            response.errorcode = 1;
-
-        if (www.error != null)
-            response.errorcode = 1;
-
-        if (string.IsNullOrEmpty(www.text))
-            response.errorcode = 1;
-
-        if (response.errorcode != 0)
+        if (!PRequest.WWWSuccess(www))
         {
+            response.errorcode = 1;
             response.success = false;
             return response;
         }
@@ -101,21 +93,32 @@ internal class PRequest
         return response;
     }
 
-    public static QuickResponse<T> FastProcessThreadsafe<T>(string data) where T : ResponseBase
+    public static bool WWWSuccess(WWW www)
+    {
+        if (www == null)
+            return false;
+
+        if (www.error != null)
+            return false;
+
+        if (string.IsNullOrEmpty(www.text))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Processes some returned text from a www. Technically not threadsafe, but in current 
+    /// usage context is 100 % safe. Works around UNitys limitations on only main thread 
+    /// accessing Unity stuff, as such error checking on the WWW MUST BE DONE BEFORE CALLING 
+    /// THIS using PRequest.WWWSuccess.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static QuickResponse<T> FastProcessUnityThread<T>(string data) where T : ResponseBase
     {
         var response = new QuickResponse<T>();
-
-        if (data == null)
-            response.errorcode = 1;
-
-        if (string.IsNullOrEmpty(data))
-            response.errorcode = 1;
-
-        if (response.errorcode != 0)
-        {
-            response.success = false;
-            return response;
-        }
 
         var results = LitJson.JsonMapper.ToObject<T>(data);
         response.success = results.success;

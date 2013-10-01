@@ -2,7 +2,6 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 
 public class PlayerChallenge : PDictionary
 {
@@ -154,5 +153,28 @@ public class PlayerChallenge : PDictionary
     {
         get { return ContainsKey("rdate") ? GetString("rdate") : "Just Now"; }
         set { SetProperty("rdate", value); }
+    }
+
+    public string OtherID(string MyID)
+    {
+        for (int i = 0; i < playerids.Count; i++)
+        {
+            if (playerids[i] != MyID)
+                return playerids[i];
+        }
+        return null;
+    }
+
+    public string OtherName(string MyID)
+    {
+        string otherID = OtherID(MyID);
+        if (otherID != null)
+        {
+            if (playerinfo.ContainsKey(otherID))
+            {
+                return playerinfo[otherID].name;
+            }
+        }
+        return null;
     }
 }

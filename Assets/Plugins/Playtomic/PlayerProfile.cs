@@ -26,7 +26,7 @@ public class PlayerProfile : PDictionary
         set { SetProperty("elo", value); }
     }
 
-    public int reponsetime
+    public int responsetime
     {
         get { return GetInt("responsetime"); }
         set { SetProperty("responsetime", value); }

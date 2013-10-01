@@ -10,7 +10,7 @@ public class PlayerChallengeInfo : PDictionary
 
     public string name
     {
-        get { return ContainsKey("name") ? GetString("name") : "error"; }
+        get { return ContainsKey("name") ? GetString("name") : null; }
         set { SetProperty("name", value); }
     }
 
