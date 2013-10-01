@@ -40,7 +40,7 @@ internal class PRequest
 		postdata.Add ("section", section);
 		postdata.Add ("action", action);
 	
-		var json = PJSON.JsonEncode(postdata);
+        var json = LitJson.JsonMapper.ToJson(postdata);
 
 		var post = new WWWForm();
 		post.AddField("data", PEncode.Base64(json));
@@ -50,6 +50,35 @@ internal class PRequest
 		
 		return new WWW(APIURL, post);
 	}
+
+    public static WWW LegacyPrepare(string section, string action, Dictionary<string, object> postdata = null)
+    {
+        if (postdata == null)
+        {
+            postdata = new Dictionary<string, object>();
+        }
+        else
+        {
+
+            postdata.Remove("publickey");
+            postdata.Remove("section");
+            postdata.Remove("action");
+        }
+
+        postdata.Add("publickey", PUBLICKEY);
+        postdata.Add("section", section);
+        postdata.Add("action", action);
+
+        var json = PJSON.JsonEncode(postdata);
+
+        var post = new WWWForm();
+        post.AddField("data", PEncode.Base64(json));
+        post.AddField("hash", PEncode.MD5(json + PRIVATEKEY));
+
+
+
+        return new WWW(APIURL, post);
+    }
 	
 	public static PResponse Process(WWW www)
 	{
