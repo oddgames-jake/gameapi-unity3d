@@ -107,10 +107,11 @@ public class PPlayerChallenges
     /// Returns a List of Challenges a Player is in
     /// </summary>
     /// <param name="playerID"> The player id to search for</param>
+    /// <param name="replays"> Return replay data as well</param>
     /// <param name="callback"> Callback Function</param>
-    public void List(string playerID, Action<List<PlayerChallenge>, int, PResponse> callback)
+    public void List(string playerID, bool replays,Action<List<PlayerChallenge>, int, PResponse> callback)
     {
-        List<PlayerChallenge>(playerID, callback);
+        List<PlayerChallenge>(playerID, replays, callback);
     }
 
     /// <summary>
@@ -118,19 +119,18 @@ public class PPlayerChallenges
     /// </summary>
     /// <typeparam name="T"> DataType of Challenge (T : PlayerChallenge)</typeparam>
     /// <param name="playerID"></param>
+    /// <param name="replays"> Return replay data as well</param>
     /// <param name="callback"></param>
-    public void List<T>(string playerID, Action<List<T>, int, PResponse> callback) where T  : PlayerChallenge, new()
+    public void List<T>(string playerID, bool replays, Action<List<T>, int, PResponse> callback) where T  : PlayerChallenge, new()
     {
-        var postdata = new Dictionary<string, object>
-        {
-            {"playerid", playerID}
-        };
-
+        var postdata = new Dictionary<string, object>{{"playerid", playerID}};
+        if (replays)
+            postdata.Add("full", true);
         Playtomic.API.StartCoroutine(SendListRequest(postdata, callback));
     }
 
     private IEnumerator SendListRequest<T>(Dictionary<string, object> postdata, 
-                                           Action<List<T>, int, PResponse> callback) where T: PlayerChallenge,new()
+                                           Action<List<T>, int, PResponse> callback) where T: PlayerChallenge, new()
     {
 
         var www = PRequest.Prepare(SECTION, LIST, postdata);
@@ -257,7 +257,7 @@ public class PPlayerChallenges
     /// </summary>
     /// <param name="challenge"> The updated challenge</param>
     /// <param name="callback"> Callback function</param>
-    public void Update(PlayerChallenge challenge, Action<PlayerChallenge, PResponse> callback)
+    public void Update(PlayerChallenge challenge, Action<bool, PResponse> callback)
     {
         Update<PlayerChallenge>(challenge, callback);
     }
@@ -268,7 +268,7 @@ public class PPlayerChallenges
     /// <typeparam name="T">Type of Challenge (T : PlayerChallenge)</typeparam>
     /// <param name="challenge"></param>
     /// <param name="callback"></param>
-    public void Update<T>(T challenge, Action<T, PResponse> callback) where T : PlayerChallenge, new()
+    public void Update<T>(T challenge, Action<bool, PResponse> callback) where T : PlayerChallenge, new()
     {
         Playtomic.API.StartCoroutine(SendUpdate<T>(SECTION, UPDATE, challenge, callback));
     }
@@ -276,22 +276,20 @@ public class PPlayerChallenges
     private IEnumerator SendUpdate<T>(string section, 
                                       string action, 
                                       Dictionary<string, object> postdata, 
-                                      Action<T, PResponse> callback) where T : PlayerChallenge, new()
+                                      Action<bool, PResponse> callback) where T : PlayerChallenge, new()
     {
 
         var www = PRequest.Prepare(section, action, postdata);
         yield return www;
 
-        var challenge = default(T);
-        var response = default(QuickResponse<UpdateChallengeResponse<T>>);
+        var response = default(QuickResponse<ReplaySentResponse>);
 
         if (PRequest.WWWSuccess(www))
         {
-
             string data = www.text;
             Thread t = new Thread(() =>
             {
-                response = PRequest.FastProcessUnityThread<UpdateChallengeResponse<T>>(data);
+                response = PRequest.FastProcessUnityThread<ReplaySentResponse>(data);
             });
 
             t.Start();
@@ -302,15 +300,12 @@ public class PPlayerChallenges
         }
         else
         {
-            response = new QuickResponse<UpdateChallengeResponse<T>> {success = false, errorcode = 1};
+            response = new QuickResponse<ReplaySentResponse> {success = false, errorcode = 1};
         }
-
-        if(response.success)
-            challenge = response.ResponseObject.challenge;
-
+        
         var resp = new PResponse {errorcode = response.errorcode, success = response.success};
 
-        callback(challenge, resp);
+        callback(response.success, resp);
     }
 
     /// <summary>
