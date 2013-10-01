@@ -20,6 +20,12 @@ public class GameVar : PDictionary
 		set { SetProperty ("value", value); }
 	}
 
+    /// <summary>
+    /// Attempts to pull a Generic Value out of GameVar
+    /// </summary>
+    /// <typeparam name="T">Type of Value to retrieve</typeparam>
+    /// <param name="defaultValue"> Default value to return should it fail</param>
+    /// <returns> The variable if successful or the provided defaultValue</returns>
     public T GetValue<T>(T defaultValue)
     {
         if (typeof(T).IsAssignableFrom(this["value"].GetType()))
@@ -30,6 +36,13 @@ public class GameVar : PDictionary
         return defaultValue;
     }
 
+    /// <summary>
+    /// Attempts to pull a Generic Value out of GameVar
+    /// </summary>
+    /// <typeparam name="T"> Type of Value to retrieve</typeparam>
+    /// <param name="defaultValue"> The Default to retun in error cases</param>
+    /// <param name="returnValue"> The output. is == defaultValue if failed</param>
+    /// <returns> Succes/Fail of retrieval of var</returns>
     public bool GetValue<T>(T defaultValue, out T returnValue)
     {
         if (typeof(T).IsAssignableFrom(this["value"].GetType()))
