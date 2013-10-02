@@ -130,9 +130,6 @@ internal class PRequest
         if (www.error != null)
             return false;
 
-        if (string.IsNullOrEmpty(www.text))
-            return false;
-
         return true;
     }
 
@@ -149,11 +146,24 @@ internal class PRequest
     {
         var response = new QuickResponse<T>();
 
+        if (string.IsNullOrEmpty(data))
+        {
+            response.success = false;
+            response.errorcode = 1;
+
+            return response;
+        }
+
         var results = LitJson.JsonMapper.ToObject<T>(data);
         response.success = results.success;
         response.errorcode = results.errorcode;
 
         response.ResponseObject = results;
+
+        // Lets clean up after ourselves
+        data = null;
+        GC.Collect();
+
         return response;
     }
 }
