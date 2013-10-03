@@ -177,4 +177,35 @@ public class PlayerChallenge : PDictionary
         }
         return null;
     }
+
+    public List<string> OtherNames(string MyID)
+    {
+        List<string> toRet = new List<string>();
+        List<string> ids = OtherIDs(MyID);
+
+        for (int i = 0; i < ids.Count; i++)
+        {
+            toRet.Add(GetName(ids[i]));
+        }
+        return null;
+    }
+
+    public string GetName(string id)
+    {
+        if(playerinfo.ContainsKey(id))
+            return playerinfo[id].name;
+
+        return null;
+    }
+
+    public List<string> OtherIDs(string MyID)
+    {
+        List<string> toRet = new List<string>();
+        for (int i = 0; i < playerids.Count; i++)
+        {
+            if (playerids[i] != MyID)
+                toRet.Add(playerids[i]);
+        }
+        return null;
+    }
 }
