@@ -35,7 +35,30 @@ public class PLeaderboards
 	{
 		Playtomic.API.StartCoroutine(SendListRequest(SECTION, SAVEANDLIST, score, callback));
 	}
-	
+
+    public void GetSurroundingScores<T>(T score, int above, int below, Action<List<T>, int, PResponse> callback) where T : PlayerScore
+    {
+        var postdata = score;
+        postdata.Add("afterlength", below);
+        postdata.Add("above", above);
+        Playtomic.API.StartCoroutine(SendListRequest(SECTION, SAVEANDLIST, score, callback));
+    }
+
+    public void GetReplay<T>(T score, Action<List<T>, int, PResponse> callback) where T : PlayerScore
+    {
+        Playtomic.API.StartCoroutine(SendListRequest(SECTION, "getreplay", score, callback));
+    }
+
+    public void GetRivalReplays<T>(T score, int pointDifference, int returnAmount, Action<List<T>, int, PResponse> callback) where T : PlayerScore
+    {
+        var postdata = new Dictionary<string, object>();
+        postdata.Add("points", score.points);
+        postdata.Add("table", "France");
+        postdata.Add("pointdifference", pointDifference);
+        postdata.Add("returnamount", returnAmount);
+        Playtomic.API.StartCoroutine(SendListRequest(SECTION, "getrivalreplays", postdata, callback));
+    }
+
 	/**
 	 * Lists scores
 	 * @param	options	Dictionary<string,object>	The listing options
